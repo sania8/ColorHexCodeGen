@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Color Generator & Palette Designer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+    /* Blur and overlay effect */
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(240, 240, 240, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 999;
+  display: none;
+}
+
+#feedback-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  display: none;
+  width: 90%;
+  max-width: 500px;
+}
+
+
+    body {
+      background: #f4f6f8;
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #222;
+      font-weight: 700;
+    }
+
+    .main-wrapper {
+      display: flex;
+      gap: 2rem;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .container {
+      background: white;
+      flex: 3;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .sidebar {
+      flex: 1;
+      background: #ffffff;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      font-size: 0.95rem;
+      color: #444;
+    }
+
+    .sidebar h3 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #222;
+    }
+
+    .mode-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .mode-buttons button {
+      background: #333;
+      color: #fff;
+      padding: 0.7rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .mode-buttons button:hover {
+      background: #555;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      font-size: 1rem;
+      resize: none;
+      outline: none;
+    }
+
+    button.generate-btn {
+      background: #0057e7;
+      color: white;
+      padding: 0.7rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .loader {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 1rem;
+    }
+
+    .result {
+      margin-top: 2rem;
+    }
+
+    .color-box, .palette-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .swatch {
+      width: 100px;
+      height: 100px;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: #111;
+      transition: transform 0.2s ease;
+    }
+
+    .swatch:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎨 AI Color Generator & Palette Designer</h1>
+  <div class="main-wrapper">
+    <!-- Main Color App -->
+    <div class="container">
+      <div class="mode-buttons">
+        <button onclick="activateMode('color')">Generate Color</button>
+        <button onclick="activateMode('palette')">Generate Palette</button>
+      </div>
+
+      <div id="input-area" class="hidden">
+        <textarea id="description" placeholder="Describe your color or palette..."></textarea>
+        <button class="generate-btn" onclick="handleGenerate()">Generate</button>
+        <div class="loader" id="loader" style="display:none;">⏳ Generating...</div>
+      </div>
+
+      <div class="result">
+        <div id="feedback-form" class="hidden" style="margin-top: 2rem; text-align: left;">
+            <h3>📝 We'd love your feedback</h3>
+            <input type="text" id="name" placeholder="Your Name" required />
+            <input type="number" id="age" placeholder="Your Age" required />
+            <input type="text" id="experience" placeholder="Your experience with AI or color tools" />
+            <textarea id="feedback" placeholder="Your feedback..." rows="4"></textarea>
+            <select id="rating">
+              <option value="">Rate us</option>
+              <option value="5">⭐⭐⭐⭐⭐</option>
+              <option value="4">⭐⭐⭐⭐</option>
+              <option value="3">⭐⭐⭐</option>
+              <option value="2">⭐⭐</option>
+              <option value="1">⭐</option>
+            </select>
+            <button onclick="submitFeedback()">Submit Feedback</button>
+            <p id="submission-status" style="margin-top:0.5rem; font-weight:500;"></p>
+          </div>
+        <div id="color-box" class="color-box"></div>
+        <div id="palette-box" class="palette-box"></div>
+      </div>
+    </div>
+
+    <!-- Sidebar Instructions -->
+    <div class="sidebar">
+      <h3>🔧 How to Use</h3>
+      <ul>
+        <li><strong>Generate Color:</strong> Enter a description like <em>"deep ocean blue"</em>. Get a hex color and click to copy.</li>
+        <li><strong>Generate Palette:</strong> Describe a theme like <em>"pastel tones for a kids’ book"</em>. Click any color to copy its hex.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let mode = "";
+    let generationCount = 0;
+  
+    function activateMode(selectedMode) {
+      mode = selectedMode;
+      document.getElementById("input-area").classList.remove("hidden");
+      document.getElementById("color-box").innerHTML = "";
+      document.getElementById("palette-box").innerHTML = "";
+      document.getElementById("feedback-form").classList.add("hidden"); // hide form on reset
+    }
+  
+    function copyPaletteHex(element, hex) {
+      navigator.clipboard.writeText(hex).then(() => {
+        const original = element.innerText;
+        element.innerText = "✔ Copied!";
+        element.style.fontWeight = "bold";
+  
+        setTimeout(() => {
+          element.innerText = hex;
+          element.style.fontWeight = "normal";
+        }, 1500);
+      });
+    }
+  
+    async function handleGenerate() {
+      const input = document.getElementById("description").value.trim();
+      if (!input) return;
+  
+      trackGenerations(); // 👈 trigger feedback tracking
+  
+      document.getElementById("loader").style.display = "block";
+      document.getElementById("color-box").innerHTML = "";
+      document.getElementById("palette-box").innerHTML = "";
+  
+      const endpoint = mode === "palette" ? "/palette" : "/generate";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: input })
+      });
+      const data = await res.json();
+  
+      document.getElementById("loader").style.display = "none";
+  
+      if (mode === "color") {
+        const hex = data.hex || "#888888";
+        document.getElementById("color-box").innerHTML = `
+          <div class="swatch" style="background:${hex}" onclick="copyPaletteHex(this, '${hex}')">${hex}</div>`;
+      } else if (mode === "palette") {
+        const palette = data.palette || ["#888888", "#cccccc", "#eeeeee"];
+        document.getElementById("palette-box").innerHTML = "";
+        palette.forEach(hex => {
+          const div = document.createElement("div");
+          div.className = "swatch";
+          div.style.backgroundColor = hex;
+          div.innerText = hex;
+          div.onclick = () => copyPaletteHex(div, hex);
+          document.getElementById("palette-box").appendChild(div);
+        });
+      }
+    }
+  
+    function trackGenerations() {
+      generationCount++;
+      if (generationCount === 2) {
+        document.getElementById("feedback-form").classList.remove("hidden");
+      }
+    }
+  
+    async function loadUserCount() {
+      try {
+        const res = await fetch("/count");
+        const data = await res.json();
+        document.getElementById("user-count").innerText = data.total || "N/A";
+      } catch (e) {
+        document.getElementById("user-count").innerText = "Error";
+      }
+    }
+  
+    loadUserCount(); // 👈 Load counter when page loads
+  
+    async function submitFeedback() {
+      const url = "https://script.google.com/macros/s/AKfycbxhaem6WtBuZatpR1dTtT23FRV4ONRu2wMlcdxwAoDHStLLi97gIMesEb0CmtWBXqm2MQ/exec";
+  
+      const payload = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        experience: document.getElementById("experience").value,
+        feedback: document.getElementById("feedback").value,
+        rating: document.getElementById("rating").value
+      };
+  
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" }
+        });
+  
+        if (res.ok) {
+          document.getElementById("submission-status").innerText = "✅ Thanks for your feedback!";
+          document.getElementById("feedback-form").reset();
+          document.getElementById("feedback-form").classList.add("hidden");
+          loadUserCount();
+        } else {
+          document.getElementById("submission-status").innerText = "❌ Submission failed.";
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("submission-status").innerText = "❌ Error submitting feedback.";
+      }
+    }
+  </script>
+  </body>
+</html>
